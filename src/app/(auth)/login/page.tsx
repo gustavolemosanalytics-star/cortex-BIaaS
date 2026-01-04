@@ -41,7 +41,7 @@ export default function LoginPage() {
           title: "Login realizado com sucesso!",
           description: "Redirecionando...",
         });
-        router.push("/dashboard");
+        router.push("/dashboards");
       }
     } catch (error) {
       toast({
@@ -57,7 +57,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signIn("google", { callbackUrl: "/dashboard" });
+      await signIn("google", { callbackUrl: "/dashboards" });
     } catch (error) {
       toast({
         title: "Erro",

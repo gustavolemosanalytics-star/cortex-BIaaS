@@ -81,10 +81,11 @@ export function LineChartWidget({
   };
 
   // Preparar dados para o gráfico
-  const chartData = data.map((item) => ({
+  // Preparar dados para o gráfico
+  const chartData = Array.isArray(data) ? data.map((item) => ({
     date: item.date,
     value: getValueKey(item),
-  }));
+  })) : [];
 
   return (
     <Card className="h-full">

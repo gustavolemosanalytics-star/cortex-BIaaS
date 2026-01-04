@@ -63,17 +63,11 @@ export default function RegisterPage() {
 
       toast({
         title: "Conta criada com sucesso!",
-        description: "Fazendo login...",
+        description: "Redirecionando para o login...",
       });
 
-      // Auto login after registration
-      await signIn("credentials", {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
-      });
-
-      router.push("/dashboard");
+      // Redirect to login page
+      router.push("/login");
     } catch (error: any) {
       toast({
         title: "Erro ao criar conta",

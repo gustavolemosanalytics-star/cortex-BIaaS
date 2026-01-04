@@ -20,6 +20,8 @@ interface BarChartWidgetProps {
   metric: string;
   colors?: string[];
   height?: number;
+  index?: string;
+  category?: string;
 }
 
 export function BarChartWidget({
@@ -28,6 +30,8 @@ export function BarChartWidget({
   metric,
   colors = ["#6366f1", "#8b5cf6", "#ec4899"],
   height = 300,
+  index = "source",
+  category = "sessions",
 }: BarChartWidgetProps) {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,7 +81,7 @@ export function BarChartWidget({
           <div className="flex items-center justify-center" style={{ height }}>
             <p className="text-sm text-destructive">{error}</p>
           </div>
-        ) : data.length === 0 ? (
+        ) : !Array.isArray(data) || data.length === 0 ? (
           <div className="flex items-center justify-center" style={{ height }}>
             <p className="text-sm text-muted-foreground">Sem dados disponíveis</p>
           </div>
@@ -86,7 +90,7 @@ export function BarChartWidget({
             <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis
-                dataKey="source"
+                dataKey={index}
                 stroke="#9ca3af"
                 fontSize={12}
               />
@@ -99,7 +103,7 @@ export function BarChartWidget({
                 }}
               />
               <Legend />
-              <Bar dataKey="sessions" name="Sessões" fill={colors[0]} />
+              <Bar dataKey={category} name="Valor" fill={colors[0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

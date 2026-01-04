@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { generateSlug } from "@/lib/utils";
@@ -14,11 +13,14 @@ const createDashboardSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
+      console.log("[API] Unauthorized: No session or user ID");
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
+
+    console.log("[API] Fetching dashboards for user:", session.user.id);
 
     const dashboards = await prisma.dashboard.findMany({
       where: {
@@ -47,7 +49,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
@@ -80,8 +82,40 @@ export async function POST(req: NextRequest) {
 
     // If template is specified, load template widgets
     if (template) {
-      // TODO: Load template from database or built-in templates
-      // For now, we'll leave it empty and handle template loading separately
+      const mockWidgets = [];
+
+      if (template === 'meta_ads') {
+        mockWidgets.push(
+          { type: 'kpi', title: 'Investimento Total', config: { value: 'R$ 12.450', change: 15 }, position: { x: 0, y: 0, w: 3, h: 2 }, dashboardId: dashboard.id },
+          { type: 'kpi', title: 'Impressões', config: { value: '450.2K', change: 8 }, position: { x: 3, y: 0, w: 3, h: 2 }, dashboardId: dashboard.id },
+          { type: 'kpi', title: 'Cliques (Link)', config: { value: '12.8K', change: -3 }, position: { x: 6, y: 0, w: 3, h: 2 }, dashboardId: dashboard.id },
+          { type: 'kpi', title: 'CTR Médio', config: { value: '2.85%', change: 0.5 }, position: { x: 9, y: 0, w: 3, h: 2 }, dashboardId: dashboard.id },
+          { type: 'bar', title: 'Investimento por Campanha', config: { dataSource: 'meta_ads', metric: 'campaigns', index: 'name', category: 'spend' }, position: { x: 0, y: 2, w: 6, h: 4 }, dashboardId: dashboard.id },
+          { type: 'line', title: 'Investimento Diário', config: { dataSource: 'meta_ads', metric: 'daily' }, position: { x: 6, y: 2, w: 6, h: 4 }, dashboardId: dashboard.id }
+        );
+      } else if (template === 'google_ads') {
+        mockWidgets.push(
+          { type: 'kpi', title: 'Custo Total', config: { value: 'R$ 8.920', change: 5 }, position: { x: 0, y: 0, w: 3, h: 2 }, dashboardId: dashboard.id },
+          { type: 'kpi', title: 'Conversões', config: { value: '340', change: 12 }, position: { x: 3, y: 0, w: 3, h: 2 }, dashboardId: dashboard.id },
+          { type: 'kpi', title: 'CPA Médio', config: { value: 'R$ 26,23', change: -5 }, position: { x: 6, y: 0, w: 3, h: 2 }, dashboardId: dashboard.id },
+          { type: 'kpi', title: 'Taxa de Conv.', config: { value: '4.2%', change: 0.8 }, position: { x: 9, y: 0, w: 3, h: 2 }, dashboardId: dashboard.id },
+          { type: 'line', title: 'Desempenho Semanal', config: { dataSource: 'google_ads', metric: 'daily' }, position: { x: 0, y: 2, w: 12, h: 4 }, dashboardId: dashboard.id }
+        );
+      } else if (template === 'ga4') {
+        mockWidgets.push(
+          { type: 'kpi', title: 'Usuários Ativos', config: { value: '45.2K', change: 22 }, position: { x: 0, y: 0, w: 3, h: 2 }, dashboardId: dashboard.id },
+          { type: 'kpi', title: 'Novos Usuários', config: { value: '38.1K', change: 25 }, position: { x: 3, y: 0, w: 3, h: 2 }, dashboardId: dashboard.id },
+          { type: 'kpi', title: 'Tempo Médio', config: { value: '2m 45s', change: 10 }, position: { x: 6, y: 0, w: 3, h: 2 }, dashboardId: dashboard.id },
+          { type: 'kpi', title: 'Taxa de Engaj.', config: { value: '55%', change: 5 }, position: { x: 9, y: 0, w: 3, h: 2 }, dashboardId: dashboard.id },
+          { type: 'bar', title: 'Origem de Tráfego', config: { dataSource: 'ga4', metric: 'traffic_sources', index: 'source', category: 'sessions' }, position: { x: 0, y: 2, w: 12, h: 4 }, dashboardId: dashboard.id }
+        );
+      }
+
+      if (mockWidgets.length > 0) {
+        await prisma.widget.createMany({
+          data: mockWidgets,
+        });
+      }
     }
 
     return NextResponse.json({ dashboard }, { status: 201 });

@@ -15,8 +15,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, BarChart3, Trash2, Edit, ExternalLink } from "lucide-react";
+import { Plus, Search, BarChart3, Trash2, Edit, ExternalLink, Eye } from "lucide-react";
 
 interface Dashboard {
   id: string;
@@ -40,6 +47,7 @@ export default function DashboardsPage() {
   const [newDashboard, setNewDashboard] = useState({
     name: "",
     description: "",
+    template: "",
   });
 
   useEffect(() => {
@@ -184,6 +192,26 @@ export default function DashboardsPage() {
                   }
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="template">Template Pronto (Opcional)</Label>
+                <Select
+                  value={newDashboard.template}
+                  onValueChange={(value) => setNewDashboard({ ...newDashboard, template: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um template para começar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum (Dashboard Vazio)</SelectItem>
+                    <SelectItem value="meta_ads">Meta Ads (Facebook/Instagram)</SelectItem>
+                    <SelectItem value="google_ads">Google Ads</SelectItem>
+                    <SelectItem value="ga4">Google Analytics 4</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Um template pronto já traz as melhores métricas configuradas.
+                </p>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
@@ -269,20 +297,20 @@ export default function DashboardsPage() {
                   variant="outline"
                   size="sm"
                   className="flex-1"
+                  onClick={() => router.push(`/view/${dashboard.id}`)}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  Visualizar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
                   onClick={() => router.push(`/dashboard/${dashboard.id}/edit`)}
                 >
                   <Edit className="mr-2 h-4 w-4" />
                   Editar
                 </Button>
-                {dashboard.isPublic && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(`/view/${dashboard.slug}`, "_blank")}
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                )}
                 <Button
                   variant="outline"
                   size="sm"

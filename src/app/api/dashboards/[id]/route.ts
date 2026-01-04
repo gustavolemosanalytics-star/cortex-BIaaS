@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -11,17 +10,25 @@ const updateDashboardSchema = z.object({
   isPublic: z.boolean().optional(),
   password: z.string().optional(),
   layout: z.any().optional(),
+  widgets: z.array(z.object({
+    id: z.string().optional(),
+    type: z.string(),
+    title: z.string(),
+    config: z.any(),
+    position: z.any(),
+  })).optional(),
 });
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
+    const { id } = await params;
 
     const dashboard = await prisma.dashboard.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         widgets: true,
         user: {
@@ -58,17 +65,18 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
+    const { id } = await params;
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     const dashboard = await prisma.dashboard.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!dashboard) {
@@ -83,11 +91,38 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const data = updateDashboardSchema.parse(body);
+    const { widgets, ...data } = updateDashboardSchema.parse(body);
 
-    const updatedDashboard = await prisma.dashboard.update({
-      where: { id: params.id },
-      data,
+    const updatedDashboard = await prisma.$transaction(async (tx) => {
+      const dashboard = await tx.dashboard.update({
+        where: { id },
+        data,
+      });
+
+      if (widgets) {
+        // Delete existing widgets
+        await tx.widget.deleteMany({
+          where: { dashboardId: id },
+        });
+
+        // Create new ones
+        if (widgets.length > 0) {
+          await tx.widget.createMany({
+            data: widgets.map((w) => ({
+              type: w.type,
+              title: w.title,
+              config: w.config || {},
+              position: w.position || {},
+              dashboardId: id,
+            })),
+          });
+        }
+      }
+
+      return tx.dashboard.findUnique({
+        where: { id },
+        include: { widgets: true },
+      });
     });
 
     return NextResponse.json({ dashboard: updatedDashboard });
@@ -109,17 +144,18 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
+    const { id } = await params;
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     const dashboard = await prisma.dashboard.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!dashboard) {
@@ -134,7 +170,7 @@ export async function DELETE(
     }
 
     await prisma.dashboard.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });

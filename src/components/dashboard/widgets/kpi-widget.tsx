@@ -12,6 +12,7 @@ interface KPIWidgetProps {
   format?: "currency" | "number" | "percentage";
   icon?: React.ReactNode;
   color?: string;
+  dateRange?: { type: string; from?: string; to?: string };
 }
 
 export function KPIWidget({
@@ -21,6 +22,7 @@ export function KPIWidget({
   format = "number",
   icon,
   color = "#6366f1",
+  dateRange,
 }: KPIWidgetProps) {
   const [value, setValue] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +47,7 @@ export function KPIWidget({
         body: JSON.stringify({
           source: dataSource,
           metric,
-          dateRange: { type: "last_30_days" },
+          dateRange: dateRange || { type: "last_30_days" },
         }),
       });
 

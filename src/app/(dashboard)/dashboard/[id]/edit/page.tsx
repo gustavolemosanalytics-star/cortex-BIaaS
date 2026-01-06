@@ -68,6 +68,8 @@ interface Dashboard {
     isPublished: boolean;
     isPublic: boolean;
     widgets: WidgetData[];
+    globalDateRange?: string;
+    globalFilters?: Record<string, any>;
 }
 
 interface Template {
@@ -124,6 +126,9 @@ export default function DashboardEditPage({
     // Grid Layout State
     const [layouts, setLayouts] = useState<any>({ lg: [] });
 
+    // Global filters / date range
+    const [dateRange, setDateRange] = useState<string>("last_30_days");
+
     // UI State
     const [isAddWidgetOpen, setIsAddWidgetOpen] = useState(false);
     const [selectedWidgetType, setSelectedWidgetType] = useState<string | null>(null);
@@ -147,7 +152,9 @@ export default function DashboardEditPage({
                     position: w.position && typeof w.position === 'object' && Object.keys(w.position).length > 0
                         ? w.position
                         : { x: 0, y: 0, w: 2, h: 2, i: w.id }
-                }))
+                })),
+                globalDateRange: data.dashboard.globalDateRange || "last_30_days",
+                globalFilters: data.dashboard.globalFilters || {}
             });
 
             // Set initial layout
@@ -208,6 +215,8 @@ export default function DashboardEditPage({
                     description: dashboard.description,
                     isPublished: dashboard.isPublished,
                     isPublic: dashboard.isPublic,
+                    globalDateRange: dashboard.globalDateRange || dateRange,
+                    globalFilters: dashboard.globalFilters || {},
                     widgets: dashboard.widgets.map(w => ({
                         type: w.type,
                         title: w.title,
@@ -370,7 +379,26 @@ export default function DashboardEditPage({
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
+                            <div className="hidden md:flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">Período:</span>
+                                <select
+                                    className="text-xs border rounded px-2 py-1 bg-background"
+                                    value={dashboard.globalDateRange || dateRange}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setDateRange(value);
+                                        setDashboard({
+                                            ...dashboard,
+                                            globalDateRange: value,
+                                        });
+                                    }}
+                                >
+                                    <option value="last_7_days">Últimos 7 dias</option>
+                                    <option value="last_30_days">Últimos 30 dias</option>
+                                    <option value="last_90_days">Últimos 90 dias</option>
+                                </select>
+                            </div>
                             <Button variant="outline" onClick={() => router.push(`/view/${resolvedParams.id}`)}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 Visualizar
@@ -445,7 +473,14 @@ export default function DashboardEditPage({
                                     </div>
 
                                     <div className="h-full pt-4">
-                                        {renderWidget(widget)}
+                                        {renderWidget({
+                                            ...widget,
+                                            config: {
+                                                ...widget.config,
+                                                // inject global dateRange into widget config for API usage
+                                                dateRange: dashboard.globalDateRange || dateRange,
+                                            },
+                                        })}
                                     </div>
                                 </div>
                             ))}

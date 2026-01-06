@@ -22,6 +22,7 @@ interface BarChartWidgetProps {
   height?: number;
   index?: string;
   category?: string;
+  dateRange?: { type: string; from?: string; to?: string };
 }
 
 export function BarChartWidget({
@@ -32,6 +33,7 @@ export function BarChartWidget({
   height = 300,
   index = "source",
   category = "sessions",
+  dateRange,
 }: BarChartWidgetProps) {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,7 +54,7 @@ export function BarChartWidget({
         body: JSON.stringify({
           source: dataSource,
           metric,
-          dateRange: { type: "last_30_days" },
+          dateRange: dateRange || { type: "last_30_days" },
         }),
       });
 

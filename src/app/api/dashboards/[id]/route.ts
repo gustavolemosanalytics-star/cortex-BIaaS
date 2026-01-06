@@ -10,6 +10,8 @@ const updateDashboardSchema = z.object({
   isPublic: z.boolean().optional(),
   password: z.string().optional(),
   layout: z.any().optional(),
+  globalFilters: z.any().optional(),
+  globalDateRange: z.string().optional(),
   widgets: z.array(z.object({
     id: z.string().optional(),
     type: z.string(),

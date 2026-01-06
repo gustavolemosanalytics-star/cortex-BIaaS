@@ -90,6 +90,9 @@ model Dashboard {
   expiresAt   DateTime?
   template    String?
   layout      Json     @default("{}")
+  // Global filters and date range for the dashboard editor
+  globalFilters  Json    @default("{}") // e.g. { source: "meta_ads", campaignId: "...", country: "BR" }
+  globalDateRange String  @default("last_30_days") // e.g. last_7_days, last_30_days, last_90_days, custom:YYYY-MM-DD,YYYY-MM-DD
 
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -97,12 +100,30 @@ model Dashboard {
   widgets     Widget[]
   whatsappReports WhatsAppReportConfig[]
   aiAgentSessions AIAgentSession[]
+  calculatedFields CalculatedField[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([userId])
   @@index([slug])
   @@map("cortex_dashboards")
+}
+
+// Calculated fields allow users to define custom metrics like ROAS, CPA, etc.
+model CalculatedField {
+  id          String   @id @default(cuid())
+  dashboardId String
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+
+  name        String   // e.g. "ROAS", "CPA", "Taxa de Conversão"
+  expression  String   // e.g. "revenue / spend"
+  dataType    String   // 'number', 'currency', 'percentage'
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([dashboardId])
+  @@map("cortex_calculated_fields")
 }
 
 model Widget {

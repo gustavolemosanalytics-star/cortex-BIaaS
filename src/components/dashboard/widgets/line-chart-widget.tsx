@@ -22,6 +22,7 @@ interface LineChartWidgetProps {
   metric: string;
   color?: string;
   height?: number;
+  dateRange?: { type: string; from?: string; to?: string };
 }
 
 export function LineChartWidget({
@@ -30,6 +31,7 @@ export function LineChartWidget({
   metric,
   color = "#6366f1",
   height = 300,
+  dateRange,
 }: LineChartWidgetProps) {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,7 +52,7 @@ export function LineChartWidget({
         body: JSON.stringify({
           source: dataSource,
           metric,
-          dateRange: { type: "last_30_days" },
+          dateRange: dateRange || { type: "last_30_days" },
         }),
       });
 

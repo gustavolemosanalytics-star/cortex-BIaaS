@@ -50,6 +50,7 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
+  phone         String?   // WhatsApp phone number
   isDeveloper   Boolean   @default(false)
   stripeAccountId String?
   createdAt     DateTime  @default(now())
@@ -62,6 +63,8 @@ model User {
   templates     Template[]
   purchases     TemplatePurchase[]
   reviews       TemplateReview[]
+  whatsappReports  WhatsAppReportConfig[]
+  aiAgentSessions  AIAgentSession[]
 
   @@map("cortex_users")
 }
@@ -92,6 +95,8 @@ model Dashboard {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   widgets     Widget[]
+  whatsappReports WhatsAppReportConfig[]
+  aiAgentSessions AIAgentSession[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -238,4 +243,95 @@ model TemplateReview {
   @@index([templateId])
   @@index([userId])
   @@map("cortex_template_reviews")
+}
+
+// WhatsApp Reports Models
+model WhatsAppReportConfig {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  dashboardId String
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+
+  phoneNumber String   // WhatsApp number to send reports to
+  frequency   String   // 'daily', 'weekly', 'monthly'
+  time        String   // Time to send report (HH:MM format)
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reports     WhatsAppReportHistory[]
+
+  @@unique([userId, dashboardId])
+  @@index([userId])
+  @@index([dashboardId])
+  @@map("cortex_whatsapp_reports")
+}
+
+model WhatsAppReportHistory {
+  id         String   @id @default(cuid())
+
+  configId   String
+  config     WhatsAppReportConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  status     String   // 'pending', 'sent', 'failed'
+  message    String?  @db.Text
+  error      String?
+
+  sentAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([configId])
+  @@index([status])
+  @@map("cortex_whatsapp_report_history")
+}
+
+// AI Agent Models
+model AIAgentSession {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  dashboardId String?
+  dashboard   Dashboard? @relation(fields: [dashboardId], references: [id], onDelete: SetNull)
+
+  campaignName String
+  campaignGoal String
+  status       String   // 'active', 'completed', 'cancelled'
+
+  // Payment information
+  paymentId    String?
+  amount       Decimal  @db.Decimal(10, 2) @default(20.00) // R$ 20.00
+  currency     String   @default("BRL")
+  paidAt       DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  analyses     AIAgentAnalysis[]
+
+  @@index([userId])
+  @@index([dashboardId])
+  @@index([status])
+  @@map("cortex_ai_agent_sessions")
+}
+
+model AIAgentAnalysis {
+  id         String   @id @default(cuid())
+
+  sessionId  String
+  session    AIAgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  type       String   // 'campaign_analysis', 'recommendations', 'insights'
+  title      String
+  content    String   @db.Text
+  data       Json     @default("{}") // Additional structured data
+
+  createdAt  DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([type])
+  @@map("cortex_ai_agent_analysis")
 }

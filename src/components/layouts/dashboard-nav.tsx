@@ -21,6 +21,8 @@ import {
   LogOut,
   User,
   Menu,
+  MessageSquare,
+  Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -48,6 +50,16 @@ const navigation = [
     name: "Integrações",
     href: "/integrations",
     icon: Plug,
+  },
+  {
+    name: "WhatsApp Reports",
+    href: "/settings/whatsapp-reports",
+    icon: MessageSquare,
+  },
+  {
+    name: "Agente IA",
+    href: "/ai-agent",
+    icon: Brain,
   },
   {
     name: "Configurações",
